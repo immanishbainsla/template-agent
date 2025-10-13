@@ -148,10 +148,10 @@ def validate_config(settings: Settings) -> None:
     # Validate port range
     if not (1024 <= settings.AGENT_PORT <= 65535):
         logger.erorr(
-            f"MCP_PORT must be between 1024 and 65535, got {settings.MCP_PORT}"
+            f"AGENT_PORT must be between 1024 and 65535, got {settings.AGENT_PORT}"
         )
         raise AppException(
-            f"MCP_PORT must be between 1024 and 65535, got {settings.MCP_PORT}",
+            f"AGENT_PORT must be between 1024 and 65535, got {settings.AGENT_PORT}",
             AppExceptionCode.CONFIGURATION_VALIDATION_ERROR,
         )
 
