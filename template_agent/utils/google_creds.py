@@ -24,14 +24,13 @@ def initialize_google_genai():
 
     # Check if credentials are provided as base64-encoded environment variable
     if settings.GOOGLE_APPLICATION_CREDENTIALS_CONTENT.startswith("ewog"):
+        # Validate that it's valid JSON
+        import json
         try:
             # Decode base64 credentials
             credentials_json = base64.b64decode(
                 settings.GOOGLE_APPLICATION_CREDENTIALS_CONTENT
             ).decode("utf-8")
-
-            # Validate that it's valid JSON
-            import json
 
             json.loads(credentials_json)  # This will raise an exception if invalid JSON
 
@@ -65,10 +64,9 @@ def initialize_google_genai():
 
     # Check if credentials are provided as direct JSON content
     elif settings.GOOGLE_APPLICATION_CREDENTIALS_CONTENT.strip().startswith("{"):
+        # Validate that it's valid JSON
+        import json
         try:
-            # Validate that it's valid JSON
-            import json
-
             credentials_json = settings.GOOGLE_APPLICATION_CREDENTIALS_CONTENT.strip()
             json.loads(credentials_json)  # This will raise an exception if invalid JSON
 

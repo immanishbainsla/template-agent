@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from template_agent.src.core.exceptions.exceptions import AppException, AppExceptionCode
 from template_agent.utils.pylogger import get_python_logger
 
 # Initialize logger
@@ -146,16 +147,14 @@ def validate_config(settings: Settings) -> None:
     """
     # Validate port range
     if not (1024 <= settings.AGENT_PORT <= 65535):
-        raise ValueError(
-            f"MCP_PORT must be between 1024 and 65535, got {settings.MCP_PORT}"
-        )
+        logger.erorr(f"MCP_PORT must be between 1024 and 65535, got {settings.MCP_PORT}")
+        raise AppException(f"MCP_PORT must be between 1024 and 65535, got {settings.MCP_PORT}", AppExceptionCode.CONFIGURATION_VALIDATION_ERROR)
 
     # Validate log level
     valid_log_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     if settings.PYTHON_LOG_LEVEL.upper() not in valid_log_levels:
-        raise ValueError(
-            f"PYTHON_LOG_LEVEL must be one of {valid_log_levels}, got {settings.PYTHON_LOG_LEVEL}"
-        )
+        logger.erorr(f"PYTHON_LOG_LEVEL must be one of {valid_log_levels}, got {settings.PYTHON_LOG_LEVEL}")
+        raise AppException(f"PYTHON_LOG_LEVEL must be one of {valid_log_levels}, got {settings.PYTHON_LOG_LEVEL}", AppExceptionCode.CONFIGURATION_VALIDATION_ERROR)
 
 
 # Create settings instance without validation (validation happens in main.py)
