@@ -147,7 +147,7 @@ def validate_config(settings: Settings) -> None:
     """
     # Validate port range
     if not (1024 <= settings.AGENT_PORT <= 65535):
-        logger.erorr(
+        logger.error(
             f"AGENT_PORT must be between 1024 and 65535, got {settings.AGENT_PORT}"
         )
         raise AppException(
@@ -158,7 +158,7 @@ def validate_config(settings: Settings) -> None:
     # Validate log level
     valid_log_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     if settings.PYTHON_LOG_LEVEL.upper() not in valid_log_levels:
-        logger.erorr(
+        logger.error(
             f"PYTHON_LOG_LEVEL must be one of {valid_log_levels}, got {settings.PYTHON_LOG_LEVEL}"
         )
         raise AppException(
