@@ -68,7 +68,10 @@ async def get_template_agent(
             tools = []  # No tools for local development
         else:
             logger.error(f"Failed to connect to MCP server in production mode: {e}")
-            raise AppException("Failed to connect to MCP server in production mode", AppExceptionCode.PRODUCTION_MCP_CONNECTION_ERROR)
+            raise AppException(
+                "Failed to connect to MCP server in production mode",
+                AppExceptionCode.PRODUCTION_MCP_CONNECTION_ERROR,
+            )
 
     # Initialize the language model
     model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.3)

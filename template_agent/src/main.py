@@ -40,12 +40,18 @@ def validate_and_initialize_config() -> None:
 
         logger.info("Configuration validation and initialization passed")
 
-    except AttributeError as e:
+    except AttributeError:
         # Handle case where config object is not properly initialized
-        raise AppException("Failed to properly initialize configurations", AppExceptionCode.CONFIGURATION_INITIALIZATION_ERROR)
-    except Exception as e:
+        raise AppException(
+            "Failed to properly initialize configurations",
+            AppExceptionCode.CONFIGURATION_INITIALIZATION_ERROR,
+        )
+    except Exception:
         # Re-raise as ValueError for consistent error handling
-        raise AppException("Configuration validation failed", AppExceptionCode.CONFIGURATION_VALIDATION_ERROR)
+        raise AppException(
+            "Configuration validation failed",
+            AppExceptionCode.CONFIGURATION_VALIDATION_ERROR,
+        )
 
 
 def handle_startup_error(error: Exception, context: str = "server startup") -> NoReturn:
