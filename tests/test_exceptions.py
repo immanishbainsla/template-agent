@@ -104,9 +104,7 @@ class TestAppException:
 
     def test_app_exception_creation_with_custom_code(self):
         """Test creating AppException with custom exception code."""
-        exception = AppException(
-            "Invalid request", AppExceptionCode.BAD_REQUEST_ERROR
-        )
+        exception = AppException("Invalid request", AppExceptionCode.BAD_REQUEST_ERROR)
         assert exception.detail_message == "Invalid request"
         assert exception.response_code == HTTP_400_BAD_REQUEST
         assert exception.message == "Bad Request"
@@ -114,9 +112,7 @@ class TestAppException:
 
     def test_app_exception_str_representation(self):
         """Test string representation of AppException."""
-        exception = AppException(
-            "Invalid request", AppExceptionCode.BAD_REQUEST_ERROR
-        )
+        exception = AppException("Invalid request", AppExceptionCode.BAD_REQUEST_ERROR)
         expected = "response_code=400, message=Bad Request, detail_message=Invalid request, error_code=E_001"
         assert str(exception) == expected
 
@@ -211,7 +207,7 @@ class TestExceptionRaising:
         """Test raising and catching AppException."""
         with pytest.raises(AppException) as exc_info:
             raise AppException("Test error")
-        
+
         assert exc_info.value.detail_message == "Test error"
         assert exc_info.value.response_code == HTTP_500_INTERNAL_SERVER_ERROR
 
@@ -219,7 +215,7 @@ class TestExceptionRaising:
         """Test raising and catching ToolCallException."""
         with pytest.raises(ToolCallException) as exc_info:
             raise ToolCallException("Tool failed")
-        
+
         assert exc_info.value.detail_message == "Tool failed"
         assert exc_info.value.error_code == "E_006"
 
@@ -227,7 +223,7 @@ class TestExceptionRaising:
         """Test raising and catching UnauthorizedException."""
         with pytest.raises(UnauthorizedException) as exc_info:
             raise UnauthorizedException("Auth failed")
-        
+
         assert exc_info.value.detail_message == "Auth failed"
         assert exc_info.value.response_code == HTTP_401_UNAUTHORIZED
 
@@ -235,7 +231,7 @@ class TestExceptionRaising:
         """Test raising and catching ForbiddenException."""
         with pytest.raises(ForbiddenException) as exc_info:
             raise ForbiddenException("Access denied")
-        
+
         assert exc_info.value.detail_message == "Access denied"
         assert exc_info.value.response_code == HTTP_403_FORBIDDEN
 
@@ -243,7 +239,7 @@ class TestExceptionRaising:
         """Test catching derived exceptions as base AppException."""
         with pytest.raises(AppException) as exc_info:
             raise ToolCallException("Tool failed")
-        
+
         assert isinstance(exc_info.value, ToolCallException)
         assert exc_info.value.detail_message == "Tool failed"
 
