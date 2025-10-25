@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from template_agent.src.settings import Settings, validate_config
+from template_agent.src.core.exceptions.exceptions import AppException
 
 
 class TestSettings:
@@ -79,8 +80,11 @@ class TestValidateConfig:
         settings = Settings()
         settings.PYTHON_LOG_LEVEL = "INVALID"
 
-        with pytest.raises(ValueError, match="PYTHON_LOG_LEVEL must be one of"):
+        with pytest.raises(AppException) as exc_info:
             validate_config(settings)
+
+        assert "PYTHON_LOG_LEVEL must be one of" in exc_info.value.detail_message
+        assert exc_info.value.error_code == "E_009"
 
     # Note: MCP_PORT and MCP_TRANSPORT_PROTOCOL were removed from settings
     # so these tests are no longer applicable
