@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     - Database Configuration: PostgreSQL connection parameters
     - Langfuse Configuration: Tracing and analytics settings
     - Google Configuration: Service account credentials
-    - SSO Configuration: Authentication settings
+    - MCP Configuration: MCP server connection settings
     """
 
     # Server Configuration
@@ -90,32 +90,65 @@ class Settings(BaseSettings):
         default="development", json_schema_extra={"env": "LANGFUSE_TRACING_ENVIRONMENT"}
     )
 
-    # Snowflake Configuration
-    SNOWFLAKE_ACCOUNT: Optional[str] = Field(
-        default=None, json_schema_extra={"env": "SNOWFLAKE_ACCOUNT"}
-    )
-
-    # SSO Configuration
-    SSO_CLIENT_ID: Optional[str] = Field(
-        default=None, json_schema_extra={"env": "SSO_CLIENT_ID"}
-    )
-    SSO_CLIENT_SECRET: Optional[str] = Field(
-        default=None, json_schema_extra={"env": "SSO_CLIENT_SECRET"}
-    )
-    SSO_CALLBACK_URL: str = Field(
-        default="http://0.0.0.0:8081/callback/",
-        json_schema_extra={"env": "SSO_CALLBACK_URL"},
-    )
-
-    # Session Configuration
-    SESSION_SECRET: Optional[str] = Field(
-        default=None, json_schema_extra={"env": "SESSION_SECRET"}
-    )
-
     # Google Application Credentials
     GOOGLE_APPLICATION_CREDENTIALS_CONTENT: Optional[str] = Field(
         default=None,
         json_schema_extra={"env": "GOOGLE_APPLICATION_CREDENTIALS_CONTENT"},
+    )
+
+    # MCP Server Configuration
+    MCP_SERVER_NAME: str = Field(
+        default="template-mcp-server",
+        json_schema_extra={"env": "MCP_SERVER_NAME"},
+    )
+    MCP_SERVER_URL: str = Field(
+        default="http://localhost:5001/mcp/",
+        json_schema_extra={"env": "MCP_SERVER_URL"},
+    )
+    MCP_TRANSPORT_PROTOCOL: str = Field(
+        default="streamable_http",
+        json_schema_extra={"env": "MCP_TRANSPORT_PROTOCOL"},
+    )
+    MCP_CONNECTION_TIMEOUT: int = Field(
+        default=30,
+        json_schema_extra={"env": "MCP_CONNECTION_TIMEOUT"},
+    )
+    MCP_SSL_VERIFY: bool = Field(
+        default=False,
+        json_schema_extra={
+            "env": "MCP_SSL_VERIFY",
+            "description": "Enable SSL certificate verification for MCP connections",
+        },
+    )
+
+    # Request Logging Configuration
+    REQUEST_LOGGING_ENABLED: bool = Field(
+        default=True,
+        json_schema_extra={
+            "env": "REQUEST_LOGGING_ENABLED",
+            "description": "Enable request/response logging",
+        },
+    )
+    REQUEST_LOG_HEADERS: bool = Field(
+        default=True,
+        json_schema_extra={
+            "env": "REQUEST_LOG_HEADERS",
+            "description": "Include headers in request/response logs",
+        },
+    )
+    REQUEST_LOG_BODY: bool = Field(
+        default=False,
+        json_schema_extra={
+            "env": "REQUEST_LOG_BODY",
+            "description": "Include body content in request/response logs",
+        },
+    )
+    REQUEST_LOG_BODY_MAX_SIZE: int = Field(
+        default=10240,
+        json_schema_extra={
+            "env": "REQUEST_LOG_BODY_MAX_SIZE",
+            "description": "Maximum body size in bytes to log (0 for unlimited)",
+        },
     )
 
     @property
