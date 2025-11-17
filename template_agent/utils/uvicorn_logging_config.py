@@ -1,3 +1,10 @@
+"""Uvicorn logging configuration utilities.
+
+This module provides logging configuration specifically designed for uvicorn,
+ensuring consistent log formatting and trace context across both application
+and web server logs.
+"""
+
 from __future__ import annotations
 
 import json
@@ -7,22 +14,23 @@ import socket
 import tempfile
 
 from template_agent.utils.constants import LOGGER
-from template_agent.utils.trace_context import get_trace_id, get_log_context
 from template_agent.utils.pylogger import (
-    get_log_file_path,
-    get_default_log_format,
     get_default_log_date_format,
+    get_default_log_format,
+    get_log_file_path,
     get_log_rotation_config,
 )
+from template_agent.utils.trace_context import get_log_context, get_trace_id
 
 
 class UvicornTraceFormatter(logging.Formatter):
-    """
-    Custom formatter for uvicorn logs that matches the application log format.
+    """Custom formatter for uvicorn logs that matches the application log format.
+
     Uses the same trace context logic as pylogger TraceFormatter.
     """
 
     def format(self, record):
+        """Format the log record with trace context information."""
         # Add trace ID to the log record (same logic as pylogger)
         trace_id = get_trace_id()
         if trace_id:
@@ -53,12 +61,11 @@ class UvicornTraceFormatter(logging.Formatter):
 
 
 def get_uvicorn_log_config():
-    """
-    Returns a uvicorn-compatible logging configuration that writes to both console and file.
+    """Returns a uvicorn-compatible logging configuration that writes to both console and file.
+
     This will capture uvicorn's startup, shutdown, and access logs.
     Optimized for Splunk ingestion with improved log rotation.
     """
-
     log_level = os.environ.get("PYTHON_LOG_LEVEL", "INFO").upper()
     log_file_path = get_log_file_path()
 
@@ -128,8 +135,8 @@ def get_uvicorn_log_config():
 
 
 def write_uvicorn_log_config_file():
-    """
-    Write uvicorn logging configuration to a JSON file.
+    """Write uvicorn logging configuration to a JSON file.
+
     Returns the path to the configuration file.
     """
     config = get_uvicorn_log_config()

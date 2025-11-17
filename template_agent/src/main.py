@@ -165,7 +165,7 @@ def run() -> None:
         sys.exit(0)
     except Exception as e:
         # This should rarely be reached due to handle_startup_error
-        logger.error("Server failed to start", error=str(e), exc_info=True)
+        logger.error(f"Server failed to start: {str(e)}", exc_info=True)
         sys.exit(1)
 
 

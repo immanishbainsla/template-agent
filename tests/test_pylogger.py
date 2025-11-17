@@ -22,25 +22,30 @@ class TestTraceFormatter:
 
     def setup_method(self):
         """Set up test method."""
-        from template_agent.utils.pylogger import get_default_log_format, get_default_log_date_format
+        from template_agent.utils.pylogger import (
+            get_default_log_format,
+            get_default_log_date_format,
+        )
+
         self.formatter = TraceFormatter(
-            fmt=get_default_log_format(),
-            datefmt=get_default_log_date_format()
+            fmt=get_default_log_format(), datefmt=get_default_log_date_format()
         )
 
     def test_format_with_trace_id(self):
         """Test formatting with trace ID set."""
         set_trace_id("test-trace-123")
-        set_log_context({
-            "client_name": "test-client",
-            "client_version": "1.0.0",
-            "jwt_client_id": "client123",
-            "jwt_username": "testuser",
-            "http_origin": "https://example.com",
-            "http_method": "GET",
-            "http_path": "/test",
-            "user_agent": "TestAgent/1.0"
-        })
+        set_log_context(
+            {
+                "client_name": "test-client",
+                "client_version": "1.0.0",
+                "jwt_client_id": "client123",
+                "jwt_username": "testuser",
+                "http_origin": "https://example.com",
+                "http_method": "GET",
+                "http_path": "/test",
+                "user_agent": "TestAgent/1.0",
+            }
+        )
 
         record = logging.LogRecord(
             name="test",
@@ -49,7 +54,7 @@ class TestTraceFormatter:
             lineno=0,
             msg="Test message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         formatted = self.formatter.format(record)
@@ -76,7 +81,7 @@ class TestTraceFormatter:
             lineno=0,
             msg="Test message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         formatted = self.formatter.format(record)
@@ -94,7 +99,7 @@ class TestTraceFormatter:
             lineno=0,
             msg="Test message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         formatted = self.formatter.format(record)
@@ -113,7 +118,7 @@ class TestTraceFormatter:
             lineno=0,
             msg="Test message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         formatted = self.formatter.format(record)
@@ -137,7 +142,7 @@ class TestTqdmLoggingHandler:
             lineno=0,
             msg="Test message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         with patch("template_agent.utils.pylogger.tqdm") as mock_tqdm:
@@ -156,7 +161,7 @@ class TestTqdmLoggingHandler:
             lineno=0,
             msg="Test message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         with patch("template_agent.utils.pylogger.tqdm") as mock_tqdm:
@@ -173,7 +178,7 @@ class TestConfigureLogging:
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch.dict("os.environ", {"LOG_FILE_PATH": f"{temp_dir}/test.log"}):
                 configure_logging()
-                
+
                 # Verify root logger is configured
                 root_logger = logging.getLogger()
                 assert root_logger.level == logging.INFO
@@ -187,16 +192,16 @@ class TestConfigureLogging:
                 configure_logging(
                     log_level="DEBUG",
                     log_format="%(message)s",
-                    enable_file_logging=True
+                    enable_file_logging=True,
                 )
-                
+
                 root_logger = logging.getLogger()
                 assert root_logger.level == logging.DEBUG
 
     def test_configure_logging_without_file(self):
         """Test configure_logging with file logging disabled."""
         configure_logging(enable_file_logging=False)
-        
+
         root_logger = logging.getLogger()
         # Should only have console handler, not file handler
         handler_classes = [type(h).__name__ for h in root_logger.handlers]
@@ -207,10 +212,10 @@ class TestConfigureLogging:
         with tempfile.TemporaryDirectory() as temp_dir:
             log_dir = os.path.join(temp_dir, "logs", "subdir")
             log_file = os.path.join(log_dir, "test.log")
-            
+
             with patch.dict("os.environ", {"LOG_FILE_PATH": log_file}):
                 configure_logging(enable_file_logging=True)
-                
+
                 assert os.path.exists(log_dir)
 
     def test_configure_logging_fallback_to_temp(self):
@@ -218,7 +223,7 @@ class TestConfigureLogging:
         with patch("os.makedirs", side_effect=PermissionError("Access denied")):
             with patch.dict("os.environ", {"LOG_FILE_PATH": "/invalid/path/test.log"}):
                 configure_logging(enable_file_logging=True)
-                
+
                 # Should not raise an exception and should use temp directory
 
 
@@ -251,22 +256,21 @@ class TestLoggingIntegration:
         """Test logging with trace context integration."""
         # Configure logging
         configure_logging(log_level="DEBUG", enable_file_logging=False)
-        
+
         # Set trace context
         set_trace_id("integration-test-123")
-        set_log_context({
-            "client_name": "integration-client",
-            "client_version": "2.0.0"
-        })
-        
+        set_log_context(
+            {"client_name": "integration-client", "client_version": "2.0.0"}
+        )
+
         # Create logger and log message
         logger = get_python_logger("integration.test")
-        
+
         # Capture log output
         with patch("sys.stdout", new=StringIO()) as captured_output:
             logger.info("Integration test message")
             output = captured_output.getvalue()
-            
+
             # Verify trace context is included in output
             assert "integration-test-123" in output
             assert "integration-client" in output
@@ -275,10 +279,10 @@ class TestLoggingIntegration:
     def test_multiple_loggers_use_same_config(self):
         """Test that multiple loggers use the same configuration."""
         configure_logging(log_level="WARNING", enable_file_logging=False)
-        
+
         logger1 = get_python_logger("test.module1")
         logger2 = get_python_logger("test.module2")
-        
+
         # Both should inherit the WARNING level from root logger
         assert logger1.level <= logging.WARNING or logger1.level == logging.NOTSET
         assert logger2.level <= logging.WARNING or logger2.level == logging.NOTSET

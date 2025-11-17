@@ -20,27 +20,33 @@ class TestUvicornTraceFormatter:
 
     def setup_method(self):
         """Set up test method."""
-        from template_agent.utils.pylogger import get_default_log_format, get_default_log_date_format
+        from template_agent.utils.pylogger import (
+            get_default_log_format,
+            get_default_log_date_format,
+        )
+
         self.formatter = UvicornTraceFormatter(
-            fmt=get_default_log_format(),
-            datefmt=get_default_log_date_format()
+            fmt=get_default_log_format(), datefmt=get_default_log_date_format()
         )
 
     def test_format_with_trace_context(self):
         """Test formatting with trace context set."""
         set_trace_id("uvicorn-trace-123")
-        set_log_context({
-            "client_name": "uvicorn-client",
-            "client_version": "2.0.0",
-            "jwt_client_id": "uvicorn-client-id",
-            "jwt_username": "uvicorn-user",
-            "http_origin": "https://uvicorn.example.com",
-            "http_method": "POST",
-            "http_path": "/uvicorn/test",
-            "user_agent": "UvicornAgent/2.0"
-        })
+        set_log_context(
+            {
+                "client_name": "uvicorn-client",
+                "client_version": "2.0.0",
+                "jwt_client_id": "uvicorn-client-id",
+                "jwt_username": "uvicorn-user",
+                "http_origin": "https://uvicorn.example.com",
+                "http_method": "POST",
+                "http_path": "/uvicorn/test",
+                "user_agent": "UvicornAgent/2.0",
+            }
+        )
 
         import logging
+
         record = logging.LogRecord(
             name="uvicorn.access",
             level=logging.INFO,
@@ -48,7 +54,7 @@ class TestUvicornTraceFormatter:
             lineno=0,
             msg="Uvicorn access log message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         formatted = self.formatter.format(record)
@@ -69,6 +75,7 @@ class TestUvicornTraceFormatter:
         set_log_context({})
 
         import logging
+
         record = logging.LogRecord(
             name="uvicorn.error",
             level=logging.ERROR,
@@ -76,7 +83,7 @@ class TestUvicornTraceFormatter:
             lineno=0,
             msg="Uvicorn error message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         formatted = self.formatter.format(record)
@@ -88,6 +95,7 @@ class TestUvicornTraceFormatter:
     def test_format_includes_environment_vars(self):
         """Test that formatting includes environment variables."""
         import logging
+
         record = logging.LogRecord(
             name="uvicorn",
             level=logging.INFO,
@@ -95,7 +103,7 @@ class TestUvicornTraceFormatter:
             lineno=0,
             msg="Uvicorn message",
             args=(),
-            exc_info=None
+            exc_info=None,
         )
 
         formatted = self.formatter.format(record)
@@ -117,7 +125,7 @@ class TestGetUvicornLogConfig:
             assert "template-agent-logger" in config["formatters"]
             assert "console" in config["handlers"]
             assert "file" in config["handlers"]
-            
+
             # Check uvicorn loggers are configured
             assert "uvicorn" in config["loggers"]
             assert "uvicorn.access" in config["loggers"]
@@ -131,7 +139,12 @@ class TestGetUvicornLogConfig:
             config = get_uvicorn_log_config()
 
             # Check that loggers use the custom log level
-            for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error", "template_agent"]:
+            for logger_name in [
+                "uvicorn",
+                "uvicorn.access",
+                "uvicorn.error",
+                "template_agent",
+            ]:
                 assert config["loggers"][logger_name]["level"] == "DEBUG"
 
     def test_get_uvicorn_log_config_custom_log_file_path(self):
@@ -148,7 +161,7 @@ class TestGetUvicornLogConfig:
         with tempfile.TemporaryDirectory() as temp_dir:
             log_subdir = os.path.join(temp_dir, "uvicorn_logs")
             log_file = os.path.join(log_subdir, "uvicorn.log")
-            
+
             with patch.dict("os.environ", {"LOG_FILE_PATH": log_file}):
                 config = get_uvicorn_log_config()
 
@@ -158,9 +171,11 @@ class TestGetUvicornLogConfig:
     def test_get_uvicorn_log_config_fallback_to_temp(self):
         """Test fallback to temp directory when log path is not writable."""
         with patch("os.makedirs", side_effect=PermissionError("Access denied")):
-            with patch.dict("os.environ", {"LOG_FILE_PATH": "/invalid/uvicorn/path/test.log"}):
+            with patch.dict(
+                "os.environ", {"LOG_FILE_PATH": "/invalid/uvicorn/path/test.log"}
+            ):
                 config = get_uvicorn_log_config()
-                
+
                 # Should fall back to temp directory
                 expected_path = os.path.join(tempfile.gettempdir(), "app.log")
                 assert config["handlers"]["file"]["filename"] == expected_path
@@ -168,9 +183,12 @@ class TestGetUvicornLogConfig:
     def test_uvicorn_formatter_configuration(self):
         """Test that uvicorn formatter is correctly configured."""
         config = get_uvicorn_log_config()
-        
+
         formatter_config = config["formatters"]["template-agent-logger"]
-        assert formatter_config["()"] == "template_agent.utils.uvicorn_logging_config.UvicornTraceFormatter"
+        assert (
+            formatter_config["()"]
+            == "template_agent.utils.uvicorn_logging_config.UvicornTraceFormatter"
+        )
         assert "timestamp=" in formatter_config["format"]
         assert "trace_id=" in formatter_config["format"]
         assert "client.name=" in formatter_config["format"]
@@ -179,12 +197,12 @@ class TestGetUvicornLogConfig:
     def test_handler_configuration(self):
         """Test that handlers are correctly configured."""
         config = get_uvicorn_log_config()
-        
+
         console_handler = config["handlers"]["console"]
         assert console_handler["class"] == "logging.StreamHandler"
         assert console_handler["formatter"] == "template-agent-logger"
         assert console_handler["stream"] == "ext://sys.stdout"
-        
+
         file_handler = config["handlers"]["file"]
         assert file_handler["class"] == "logging.handlers.RotatingFileHandler"
         assert file_handler["formatter"] == "template-agent-logger"
@@ -195,8 +213,15 @@ class TestGetUvicornLogConfig:
     def test_logger_configuration(self):
         """Test that loggers are correctly configured."""
         config = get_uvicorn_log_config()
-        
-        for logger_name in ["uvicorn", "uvicorn.error", "uvicorn.access", "uvicorn.asgi", "watchfiles", "template_agent"]:
+
+        for logger_name in [
+            "uvicorn",
+            "uvicorn.error",
+            "uvicorn.access",
+            "uvicorn.asgi",
+            "watchfiles",
+            "template_agent",
+        ]:
             logger_config = config["loggers"][logger_name]
             assert logger_config["handlers"] == ["console", "file"]
             assert logger_config["propagate"] is False
@@ -212,19 +237,19 @@ class TestWriteUvicornLogConfigFile:
     def test_write_uvicorn_log_config_file(self):
         """Test writing uvicorn log config to file."""
         config_file_path = write_uvicorn_log_config_file()
-        
+
         try:
             # Verify file was created
             assert os.path.exists(config_file_path)
             assert config_file_path.endswith("_uvicorn_log_config.json")
-            
+
             # Verify content is valid JSON and matches expected structure
-            with open(config_file_path, 'r') as f:
+            with open(config_file_path, "r") as f:
                 written_config = json.load(f)
-            
+
             expected_config = get_uvicorn_log_config()
             assert written_config == expected_config
-            
+
         finally:
             # Clean up the temporary file
             if os.path.exists(config_file_path):
@@ -234,15 +259,15 @@ class TestWriteUvicornLogConfigFile:
         """Test writing config file with custom environment settings."""
         with patch.dict("os.environ", {"PYTHON_LOG_LEVEL": "WARNING"}):
             config_file_path = write_uvicorn_log_config_file()
-            
+
             try:
-                with open(config_file_path, 'r') as f:
+                with open(config_file_path, "r") as f:
                     written_config = json.load(f)
-                
+
                 # Verify custom log level is reflected in the file
                 for logger_name in ["uvicorn", "uvicorn.access", "template_agent"]:
                     assert written_config["loggers"][logger_name]["level"] == "WARNING"
-                    
+
             finally:
                 if os.path.exists(config_file_path):
                     os.unlink(config_file_path)
@@ -254,17 +279,24 @@ class TestUvicornLoggingIntegration:
     def test_config_structure_completeness(self):
         """Test that the config structure is complete and valid."""
         config = get_uvicorn_log_config()
-        
+
         # Required top-level keys
-        required_keys = ["version", "disable_existing_loggers", "formatters", "handlers", "loggers", "root"]
+        required_keys = [
+            "version",
+            "disable_existing_loggers",
+            "formatters",
+            "handlers",
+            "loggers",
+            "root",
+        ]
         for key in required_keys:
             assert key in config
-        
+
         # Verify all referenced formatters exist
         for handler_name, handler_config in config["handlers"].items():
             formatter_name = handler_config["formatter"]
             assert formatter_name in config["formatters"]
-        
+
         # Verify all logger handlers exist
         for logger_name, logger_config in config["loggers"].items():
             for handler_name in logger_config["handlers"]:
@@ -274,25 +306,26 @@ class TestUvicornLoggingIntegration:
         """Test that the formatter class path is importable."""
         config = get_uvicorn_log_config()
         formatter_class_path = config["formatters"]["template-agent-logger"]["()"]
-        
+
         # Should be able to import the formatter class
         module_path, class_name = formatter_class_path.rsplit(".", 1)
         import importlib
+
         module = importlib.import_module(module_path)
         formatter_class = getattr(module, class_name)
-        
+
         # Should be able to instantiate it
         formatter = formatter_class()
-        assert hasattr(formatter, 'format')
+        assert hasattr(formatter, "format")
 
     def test_log_rotation_settings(self):
         """Test that log rotation settings are properly configured."""
         config = get_uvicorn_log_config()
         file_handler = config["handlers"]["file"]
-        
+
         assert file_handler["maxBytes"] == 52428800  # 50MB
         assert file_handler["backupCount"] == 5
         assert file_handler["encoding"] == "utf-8"
-        
+
         # Verify the handler class supports rotation
         assert file_handler["class"] == "logging.handlers.RotatingFileHandler"

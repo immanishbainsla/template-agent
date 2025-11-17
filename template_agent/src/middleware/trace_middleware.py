@@ -1,15 +1,23 @@
+"""HTTP middleware for request tracing and logging context.
+
+This module provides middleware components for FastAPI applications to handle
+distributed tracing, JWT claim extraction, and logging context management.
+"""
+
 from __future__ import annotations
 
 import time
 
 import jwt
-from fastapi import Request
-from fastapi import Response
+from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from template_agent.src.core.exceptions.exceptions import AppException
 from template_agent.utils.pylogger import get_python_logger
-from template_agent.utils.trace_context import generate_trace_id, set_trace_id, set_log_context
+from template_agent.utils.trace_context import (
+    generate_trace_id,
+    set_log_context,
+    set_trace_id,
+)
 
 logger = get_python_logger(__name__)
 
@@ -103,6 +111,7 @@ class TraceMiddleware(BaseHTTPMiddleware):
         return log_context
 
     async def dispatch(self, request: Request, call_next):
+        """Process HTTP request with tracing and logging context."""
         # Generate a new trace ID for this request
         trace_id = generate_trace_id()
         set_trace_id(trace_id)
@@ -144,4 +153,5 @@ class TraceMiddleware(BaseHTTPMiddleware):
             logger.error(
                 f"Request failed: {request.method} {request.url.path} - Error: {str(e)} - Duration: {process_time:.3f}s"
             )
-            raise AppException("Failed to generate new traceId")
+            # Re-raise the original exception instead of creating a misleading one
+            raise

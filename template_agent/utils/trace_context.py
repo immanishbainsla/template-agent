@@ -1,11 +1,15 @@
+"""Trace context management utilities.
+
+This module provides context variable management for distributed tracing
+and logging context across async request processing.
+"""
+
 from __future__ import annotations
 
 import contextvars
 import os
 import uuid
-from typing import Any
-from typing import Dict
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from template_agent.utils.constants import AGENT
 
