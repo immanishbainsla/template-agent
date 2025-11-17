@@ -21,6 +21,41 @@ from template_agent.utils.pylogger import get_python_logger
 logger = get_python_logger(__name__)
 
 
+async def initialize_database() -> None:
+    """Initialize PostgreSQL database schema on application startup.
+
+    This function ensures the checkpoints table and related schema are created
+    before any requests are processed. Only runs when using PostgreSQL storage
+    (USE_INMEMORY_SAVER=False).
+
+    Raises:
+        AppException: If database connection or schema creation fails.
+    """
+    if settings.USE_INMEMORY_SAVER:
+        logger.info("Using in-memory storage - skipping database initialization")
+        return
+
+    try:
+        logger.info("Initializing PostgreSQL database schema")
+        async with AsyncPostgresSaver.from_conn_string(
+            settings.database_uri
+        ) as checkpoint:
+            # Setup database schema - creates checkpoints table and indexes
+            if hasattr(checkpoint, "setup"):
+                await checkpoint.setup()
+                logger.info("Database schema initialized successfully")
+            else:
+                logger.warning(
+                    "AsyncPostgresSaver does not have setup method - schema may need manual creation"
+                )
+    except Exception as e:
+        logger.error(f"Failed to initialize database schema: {e}", exc_info=True)
+        raise AppException(
+            f"Database initialization failed: {str(e)}",
+            AppExceptionCode.CONFIGURATION_INITIALIZATION_ERROR,
+        )
+
+
 @asynccontextmanager
 async def get_template_agent(
     sso_token: Optional[str] = None, enable_checkpointing: bool = True
