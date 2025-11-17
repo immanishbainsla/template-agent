@@ -18,7 +18,7 @@ from template_agent.utils.pylogger import get_python_logger
 
 router = APIRouter()
 
-logger = get_python_logger(settings.PYTHON_LOG_LEVEL)
+logger = get_python_logger(__name__)
 
 
 @router.get("/v1/history/{thread_id}")

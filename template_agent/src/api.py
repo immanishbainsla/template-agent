@@ -14,15 +14,19 @@ from starlette.responses import JSONResponse
 
 from template_agent.src.core.agent import get_template_agent
 from template_agent.src.core.exceptions.exceptions import AppException, AppExceptionCode
+from template_agent.src.middleware.trace_middleware import TraceMiddleware
 from template_agent.src.routes.feedback import router as feedback_router
 from template_agent.src.routes.health import router as health_router
 from template_agent.src.routes.history import router as history_router
 from template_agent.src.routes.stream import router as stream_router
 from template_agent.src.routes.threads import router as threads_router
 from template_agent.src.settings import settings
-from template_agent.utils.pylogger import get_python_logger
+from template_agent.utils.pylogger import configure_logging, get_python_logger
 
-logger = get_python_logger(settings.PYTHON_LOG_LEVEL)
+# Initialize logger
+configure_logging(log_level=settings.PYTHON_LOG_LEVEL)
+
+logger = get_python_logger(__name__)
 
 
 @asynccontextmanager
@@ -65,7 +69,9 @@ app.add_middleware(
 )
 
 # Configure application logger
-app.logger = get_python_logger(settings.PYTHON_LOG_LEVEL)
+app.logger = logger
+
+app.add_middleware(TraceMiddleware)
 
 # Register all route handlers
 app.include_router(health_router)

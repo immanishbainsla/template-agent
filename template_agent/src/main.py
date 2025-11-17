@@ -15,10 +15,10 @@ from template_agent.src.core.exceptions.exceptions import AppException, AppExcep
 from template_agent.src.settings import settings
 from template_agent.src.settings import validate_config as validate_config_func
 from template_agent.utils.google_creds import initialize_google_genai
-from template_agent.utils.pylogger import get_python_logger, get_uvicorn_log_config
+from template_agent.utils.pylogger import configure_logging, get_python_logger
+from template_agent.utils.uvicorn_logging_config import get_uvicorn_log_config
 
-# Initialize logger
-logger = get_python_logger(settings.PYTHON_LOG_LEVEL)
+logger = get_python_logger(__name__)
 
 
 def validate_and_initialize_config() -> None:
@@ -99,16 +99,20 @@ def main() -> None:
     logs any startup errors.
 
     The function performs the following steps:
-    1. Validates configuration settings
-    2. Initializes external services
-    3. Configures uvicorn server settings
-    4. Starts the server with appropriate error handling
+    1. Configures logging system
+    2. Validates configuration settings
+    3. Initializes external services
+    4. Configures uvicorn server settings
+    5. Starts the server with appropriate error handling
 
     Raises:
         SystemExit: If the server fails to start due to configuration
             or other errors.
     """
     try:
+        # Configure logging first
+        configure_logging(log_level=settings.PYTHON_LOG_LEVEL, enable_file_logging=True)
+
         validate_and_initialize_config()
 
         logger.info(
@@ -120,7 +124,7 @@ def main() -> None:
             "app": app,
             "host": settings.AGENT_HOST,
             "port": settings.AGENT_PORT,
-            "log_config": get_uvicorn_log_config(settings.PYTHON_LOG_LEVEL),
+            "log_config": get_uvicorn_log_config(),
         }
 
         # Add SSL configuration if certificates are provided

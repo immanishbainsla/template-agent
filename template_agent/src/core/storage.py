@@ -8,10 +8,9 @@ from typing import Optional
 
 from langgraph.checkpoint.memory import InMemorySaver
 
-from template_agent.src.settings import settings
 from template_agent.utils.pylogger import get_python_logger
 
-logger = get_python_logger(settings.PYTHON_LOG_LEVEL)
+logger = get_python_logger(__name__)
 
 # Global checkpoint instance - single instance for the entire application lifecycle
 _global_checkpoint: Optional[InMemorySaver] = None

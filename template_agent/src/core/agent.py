@@ -18,7 +18,7 @@ from template_agent.src.core.storage import get_global_checkpoint
 from template_agent.src.settings import settings
 from template_agent.utils.pylogger import get_python_logger
 
-logger = get_python_logger(log_level=settings.PYTHON_LOG_LEVEL)
+logger = get_python_logger(__name__)
 
 
 @asynccontextmanager
@@ -49,7 +49,7 @@ async def get_template_agent(
         client = MultiServerMCPClient(
             {
                 "template-mcp-server": {
-                    "url": "http://localhost:5001/mcp/",
+                    "url": "http://localhost:3000/mcp/",
                     "transport": "streamable_http",
                     "headers": {"Authorization": f"Bearer {sso_token}"}
                     if sso_token

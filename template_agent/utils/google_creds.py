@@ -11,7 +11,7 @@ import tempfile
 from template_agent.src.settings import settings
 from template_agent.utils.pylogger import get_python_logger
 
-logger = get_python_logger()
+logger = get_python_logger(__name__)
 
 
 def initialize_google_genai():

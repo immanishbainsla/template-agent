@@ -15,7 +15,7 @@ from template_agent.src.core.exceptions.exceptions import AppException, AppExcep
 from template_agent.utils.pylogger import get_python_logger
 
 # Initialize logger
-logger = get_python_logger()
+logger = get_python_logger(__name__)
 
 # Load environment variables with error handling
 try:
@@ -117,6 +117,8 @@ class Settings(BaseSettings):
         default=None,
         json_schema_extra={"env": "GOOGLE_APPLICATION_CREDENTIALS_CONTENT"},
     )
+
+    APP_ENV: str = Field(default="local", json_schema_extra={"env": "APP_ENV"})
 
     @property
     def database_uri(self) -> str:

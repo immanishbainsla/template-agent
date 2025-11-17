@@ -37,7 +37,7 @@ langfuse_handler = CallbackHandler(
     trace_name="agent-redhat", environment=settings.LANGFUSE_TRACING_ENVIRONMENT
 )
 
-app_logger = get_python_logger(settings.PYTHON_LOG_LEVEL)
+app_logger = get_python_logger(__name__)
 
 
 class AgentManager:
