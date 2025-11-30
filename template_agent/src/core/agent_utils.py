@@ -128,10 +128,10 @@ def langchain_to_chat_message(message: BaseMessage) -> ChatMessage:
                 )
                 return custom_message
             else:
-                raise ValueError(f"Unsupported chat message role: {message.role}")
+                raise ValueError("Unsupported chat message role: %s", message.role)
 
         case _:
-            raise ValueError(f"Unsupported message type: {message.__class__.__name__}")
+            raise ValueError("Unsupported message type: %s", message.__class__.__name__)
 
 
 def remove_tool_calls(

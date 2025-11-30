@@ -71,7 +71,7 @@ def handle_startup_error(error: Exception, context: str = "server startup") -> N
     """
     if isinstance(error, ValueError):
         # Configuration or validation errors
-        logger.critical(f"Configuration error during {context}: {error}")
+        logger.critical("Configuration error during %s: %s", context, error)
         sys.exit(1)
     elif isinstance(error, KeyboardInterrupt):
         # User interrupted the startup
@@ -79,15 +79,15 @@ def handle_startup_error(error: Exception, context: str = "server startup") -> N
         sys.exit(0)
     elif isinstance(error, PermissionError):
         # Permission issues (e.g., port binding)
-        logger.critical(f"Permission error during {context}: {error}")
+        logger.critical("Permission error during %s: %s", context, error)
         sys.exit(1)
     elif isinstance(error, ConnectionError):
         # Network-related errors
-        logger.critical(f"Connection error during {context}: {error}")
+        logger.critical("Connection error during %s: %s", context, error)
         sys.exit(1)
     else:
         # Unexpected errors
-        logger.critical(f"Unexpected error during {context}: {error}", exc_info=True)
+        logger.critical("Unexpected error during %s: %s", context, error, exc_info=True)
         sys.exit(1)
 
 
@@ -116,7 +116,9 @@ def main() -> None:
         validate_and_initialize_config()
 
         logger.info(
-            f"Starting template agent server on {settings.AGENT_HOST}:{settings.AGENT_PORT}"
+            "Starting template agent server on %s:%s",
+            settings.AGENT_HOST,
+            settings.AGENT_PORT,
         )
 
         # Configure uvicorn server settings
@@ -165,7 +167,7 @@ def run() -> None:
         sys.exit(0)
     except Exception as e:
         # This should rarely be reached due to handle_startup_error
-        logger.error(f"Server failed to start: {str(e)}", exc_info=True)
+        logger.error("Server failed to start: %s", str(e), exc_info=True)
         sys.exit(1)
 
 

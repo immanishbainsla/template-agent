@@ -47,7 +47,7 @@ def register_thread(user_id: str, thread_id: str) -> None:
     if user_id not in _thread_registry:
         _thread_registry[user_id] = set()
     _thread_registry[user_id].add(thread_id)
-    logger.info(f"Registered thread {thread_id} for user {user_id}")
+    logger.info("Registered thread %s for user %s", thread_id, user_id)
 
 
 def get_user_threads(user_id: str) -> list[str]:
@@ -61,7 +61,7 @@ def get_user_threads(user_id: str) -> list[str]:
     """
     global _thread_registry
     threads = list(_thread_registry.get(user_id, set()))
-    logger.info(f"Retrieved {len(threads)} threads for user {user_id}: {threads}")
+    logger.info("Retrieved %s threads for user %s: %s", len(threads), user_id, threads)
     return threads
 
 

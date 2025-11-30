@@ -22,7 +22,7 @@ try:
     load_dotenv()
 except Exception as e:
     # Log error but don't fail - environment variables might be set directly
-    logger.warning(f"Could not load .env file: {e}")
+    logger.warning("Could not load .env file: %s", e)
 
 
 class Settings(BaseSettings):

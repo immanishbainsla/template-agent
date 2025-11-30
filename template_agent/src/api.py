@@ -82,9 +82,9 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
                 request = Request(request.scope, receive)
             except Exception as e:
-                logger.warning(f"Failed to read request body: {str(e)}")
+                logger.warning("Failed to read request body: %s", str(e))
 
-        logger.info(f"Incoming request: {request_data}")
+        logger.info("Incoming request: %s", request_data)
 
         # Process request
         response = await call_next(request)
@@ -102,7 +102,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         if settings.REQUEST_LOG_HEADERS:
             response_data["headers"] = dict(response.headers)
 
-        logger.info(f"Outgoing response: {response_data}")
+        logger.info("Outgoing response: %s", response_data)
 
         return response
 
@@ -131,7 +131,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         await initialize_database()
     except Exception as e:
-        logger.critical(f"Failed to initialize database on startup: {e}")
+        logger.critical("Failed to initialize database on startup: %s", str(e))
         raise
 
     logger.info("Agent server ready - MCP connection will be established per-request")
@@ -171,9 +171,12 @@ app.include_router(threads_router)
 async def generic_exception_handler(request: Request, exc: Exception):
     """Generic exception handler for unhandled exceptions."""
     logger.exception(
-        f"Unhandled exception occurred for request_method={request.method}, request_path={request.url.path}, error={exc}"
+        "Unhandled exception occurred for request_method=%s, request_path=%s, error=%s",
+        request.method,
+        request.url.path,
+        exc,
     )
-    logger.debug(f"Unhandled exception occurred for request={request}, error={exc}")
+    logger.debug("Unhandled exception occurred for request=%s, error=%s", request, exc)
     return JSONResponse(
         status_code=AppExceptionCode.INTERNAL_SERVER_ERROR.response_code,
         content={
@@ -188,9 +191,12 @@ async def generic_exception_handler(request: Request, exc: Exception):
 async def app_exception_handler(request: Request, exc: AppException):
     """App exception handler for unhandled exceptions."""
     logger.warn(
-        f"App exception occurred for request_method={request.method}, request_path={request.url.path}, error={exc}"
+        "App exception occurred for request_method=%s, request_path=%s, error=%s",
+        request.method,
+        request.url.path,
+        exc,
     )
-    logger.debug(f"App exception occurred for request={request}, error={exc}")
+    logger.debug("App exception occurred for request=%s, error=%s", request, exc)
     return JSONResponse(
         status_code=exc.response_code,
         content={

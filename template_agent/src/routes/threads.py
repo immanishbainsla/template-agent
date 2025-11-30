@@ -52,11 +52,16 @@ async def list_threads(user_id: str) -> List[str]:
             # Use the thread registry for fast lookup
             thread_ids = get_user_threads(user_id)
             app_logger.info(
-                f"Found {len(thread_ids)} threads in registry for user_id: {user_id}: {thread_ids}"
+                "Found %s threads in registry for user_id: %s: %s",
+                len(thread_ids),
+                user_id,
+                thread_ids,
             )
             return thread_ids
         except Exception as e:
-            app_logger.error(f"Error accessing thread registry for user {user_id}: {e}")
+            app_logger.error(
+                "Error accessing thread registry for user %s: %s", user_id, e
+            )
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to retrieve threads from registry: {str(e)}",
@@ -74,11 +79,13 @@ async def list_threads(user_id: str) -> List[str]:
             rows = cur.fetchall()
             thread_ids = [row[0] for row in rows]
 
-            app_logger.info(f"Found {len(thread_ids)} threads for user_id: {user_id}")
+            app_logger.info(
+                "Found %s threads for user_id: %s", len(thread_ids), user_id
+            )
             return thread_ids
 
     except Exception as e:
         app_logger.error(
-            f"Database error while fetching threads for user {user_id}: {e}"
+            "Database error while fetching threads for user %s: %s", user_id, e
         )
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")

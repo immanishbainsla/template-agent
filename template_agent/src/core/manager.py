@@ -119,11 +119,11 @@ class AgentManager:
 
                 # No manual state saving needed - LangGraph handles this automatically
                 app_logger.info(
-                    f"Conversation completed and auto-saved for thread {thread_id}"
+                    "Conversation completed and auto-saved for thread %s", thread_id
                 )
 
             except Exception as e:
-                app_logger.error(f"Error in AgentManager stream_response: {e}")
+                app_logger.error("Error in AgentManager stream_response: %s", e)
                 yield {
                     "type": "error",
                     "content": {
@@ -144,7 +144,8 @@ class AgentManager:
         if thread_id is None:
             thread_id = str(uuid4())
             app_logger.info(
-                f"Assigning auto-generated thread_id '{thread_id}' as thread_id is missing in user request"
+                "Assigning auto-generated thread_id '%s' as thread_id is missing in user request",
+                thread_id,
             )
 
         # Configure tracing and session management (preserved from original)
@@ -197,7 +198,10 @@ class AgentManager:
         }
 
         app_logger.info(
-            f"AgentManager configured with run_id: {run_id}, thread_id: {thread_id}, session_id: {effective_session_id}"
+            "AgentManager configured with run_id: %s, thread_id: %s, session_id: %s",
+            run_id,
+            thread_id,
+            effective_session_id,
         )
         return kwargs, str(run_id), thread_id
 
@@ -246,25 +250,25 @@ class AgentManager:
         """Save the final conversation state once after streaming completes."""
         try:
             app_logger.info(
-                f"Saving {len(all_messages)} messages for thread {thread_id}"
+                "Saving %s messages for thread %s", len(all_messages), thread_id
             )
 
             # Log message types for debugging
             message_types = [
                 getattr(msg, "type", type(msg).__name__) for msg in all_messages
             ]
-            app_logger.info(f"Message types being saved: {message_types}")
+            app_logger.info("Message types being saved: %s", message_types)
 
             # Update the persistent agent's state with all messages
             await persistent_agent.aupdate_state(
                 config=config, values={"messages": all_messages}
             )
             app_logger.info(
-                f"Successfully saved conversation state for thread {thread_id}"
+                "Successfully saved conversation state for thread %s", thread_id
             )
 
         except Exception as e:
-            app_logger.error(f"Error saving final conversation state: {e}")
+            app_logger.error("Error saving final conversation state: %s", e)
             # Don't re-raise - streaming already completed successfully
 
     def _format_events(
@@ -411,7 +415,7 @@ class AgentManager:
                 ),
             }
         except Exception as e:
-            app_logger.error(f"Error handling custom event: {e}")
+            app_logger.error("Error handling custom event: %s", e)
             return None
 
     def _process_message_tuples(self, new_messages: list) -> list:
@@ -530,7 +534,8 @@ class AgentManager:
                                 # This is a tool response, track its ID
                                 self._current_tool_call_id = message.tool_call_id
                                 app_logger.debug(
-                                    f"Tracking tool response ID: {self._current_tool_call_id}"
+                                    "Tracking tool response ID: %s",
+                                    self._current_tool_call_id,
                                 )
                                 return
 
@@ -540,14 +545,16 @@ class AgentManager:
                 if hasattr(msg, "tool_calls") and msg.tool_calls:
                     self._current_tool_call_id = msg.tool_calls[0].get("id")
                     app_logger.debug(
-                        f"Tracking tool call ID from message: {self._current_tool_call_id}"
+                        "Tracking tool call ID from message: %s",
+                        self._current_tool_call_id,
                     )
                 elif hasattr(msg, "tool_call_id") and msg.tool_call_id:
                     self._current_tool_call_id = msg.tool_call_id
                     app_logger.debug(
-                        f"Tracking tool response ID from message: {self._current_tool_call_id}"
+                        "Tracking tool response ID from message: %s",
+                        self._current_tool_call_id,
                     )
 
         except Exception as e:
-            app_logger.debug(f"Error updating tool call tracking: {e}")
+            app_logger.debug("Error updating tool call tracking: %s", e)
             # Don't fail streaming due to tracking issues

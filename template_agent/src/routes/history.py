@@ -52,15 +52,16 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
         - In-memory storage mode returns empty history as conversations are not persisted
     """
     access_token = request.headers.get("X-Token")
-    logger.info(f"Retrieving history for thread_id: {thread_id}")
-    logger.info(f"Access token present: {access_token is not None}")
+    logger.info("Retrieving history for thread_id: %s", thread_id)
+    logger.info("Access token present: %s", (access_token is not None))
 
     chat_messages: List[ChatMessage] = []
 
     # When using in-memory storage, get history from shared checkpointer
     if settings.USE_INMEMORY_SAVER:
         logger.info(
-            f"Using in-memory storage - retrieving history from checkpointer for thread_id: {thread_id}"
+            "Using in-memory storage - retrieving history from checkpointer for thread_id: %s",
+            thread_id,
         )
         try:
             checkpointer = get_shared_checkpointer()
@@ -73,19 +74,23 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
             # Get all checkpoints for this thread to understand the structure
             state_history = list(checkpointer.list(config))
             logger.info(
-                f"Found {len(state_history)} checkpoints for thread_id: {thread_id}"
+                "Found %s checkpoints for thread_id: %s", len(state_history), thread_id
             )
 
             if len(state_history) == 0:
                 logger.info(
-                    f"No checkpoints found for thread {thread_id} - this means no conversations have happened in this thread yet."
+                    "No checkpoints found for thread %s - this means no conversations have happened in this thread yet.",
+                    thread_id,
                 )
             else:
                 # DEBUG: Log structure of all checkpoints to understand how messages are stored
                 for i, checkpoint_tuple in enumerate(state_history):
-                    logger.info(f"=== CHECKPOINT {i} DEBUG ===")
+                    logger.info("=== CHECKPOINT %s DEBUG ===", i)
                     logger.info(
-                        f"Checkpoint keys: {list(checkpoint_tuple.checkpoint.keys()) if checkpoint_tuple.checkpoint else 'None'}"
+                        "Checkpoint keys: %s",
+                        list(checkpoint_tuple.checkpoint.keys())
+                        if checkpoint_tuple.checkpoint
+                        else "None",
                     )
 
                     if (
@@ -94,13 +99,13 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                     ):
                         channel_values = checkpoint_tuple.checkpoint["channel_values"]
                         logger.info(
-                            f"Channel values keys: {list(channel_values.keys())}"
+                            "Channel values keys: %s", list(channel_values.keys())
                         )
 
                         if "messages" in channel_values:
                             messages = channel_values["messages"]
                             logger.info(
-                                f"Messages count in checkpoint {i}: {len(messages)}"
+                                "Messages count in checkpoint %s: %s", i, len(messages)
                             )
                             for j, msg in enumerate(messages):
                                 msg_type = (
@@ -118,15 +123,17 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                                 )
                         else:
                             logger.info(
-                                f"No 'messages' key in channel_values for checkpoint {i}"
+                                "No 'messages' key in channel_values for checkpoint %s",
+                                i,
                             )
                     else:
-                        logger.info(f"No channel_values in checkpoint {i}")
+                        logger.info("No channel_values in checkpoint %s", i)
 
                 # Try the latest checkpoint first (our current approach)
                 latest_checkpoint = state_history[-1]
                 logger.info(
-                    f"=== PROCESSING LATEST CHECKPOINT (index {len(state_history) - 1}) ==="
+                    "=== PROCESSING LATEST CHECKPOINT (index %s) ===",
+                    (len(state_history) - 1),
                 )
 
                 if (
@@ -137,18 +144,20 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                     if "messages" in channel_values:
                         messages = channel_values["messages"]
                         logger.info(
-                            f"Found {len(messages)} messages in latest checkpoint"
+                            "Found %s messages in latest checkpoint", len(messages)
                         )
                         for message in messages:
                             try:
                                 chat_message = langchain_to_chat_message(message)
                                 chat_messages.append(chat_message)
                                 logger.info(
-                                    f"Added message: {chat_message.type} - {chat_message.content[:50]}..."
+                                    "Added message: %s - %s...",
+                                    chat_message.type,
+                                    chat_message.content[:50],
                                 )
                             except Exception as e:
                                 logger.warning(
-                                    f"Could not convert message to ChatMessage: {e}"
+                                    "Could not convert message to ChatMessage: %s", e
                                 )
                                 continue
 
@@ -166,7 +175,9 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                             if "messages" in channel_values:
                                 messages = channel_values["messages"]
                                 logger.info(
-                                    f"Processing {len(messages)} messages from checkpoint {i}"
+                                    "Processing %s messages from checkpoint %s",
+                                    len(messages),
+                                    i,
                                 )
                                 for message in messages:
                                     try:
@@ -187,26 +198,33 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                                         if not is_duplicate:
                                             chat_messages.append(chat_message)
                                             logger.info(
-                                                f"Added unique message: {chat_message.type} - {chat_message.content[:50]}..."
+                                                "Added unique message: %s - %s...",
+                                                chat_message.type,
+                                                chat_message.content[:50],
                                             )
                                         else:
                                             logger.info(
-                                                f"Skipped duplicate message: {chat_message.type} - {chat_message.content[:50]}..."
+                                                "Skipped duplicate message: %s - %s...",
+                                                chat_message.type,
+                                                chat_message.content[:50],
                                             )
                                     except Exception as e:
                                         logger.warning(
-                                            f"Could not convert message to ChatMessage: {e}"
+                                            "Could not convert message to ChatMessage: %s",
+                                            e,
                                         )
                                         continue
 
             logger.info(
-                f"Found {len(chat_messages)} messages in memory for thread_id: {thread_id}"
+                "Found %s messages in memory for thread_id: %s",
+                len(chat_messages),
+                thread_id,
             )
 
             return ChatHistoryResponse(messages=chat_messages)
         except Exception as e:
             logger.error(
-                f"Error accessing in-memory storage for thread {thread_id}: {e}"
+                "Error accessing in-memory storage for thread %s: %s", thread_id, e
             )
             return ChatHistoryResponse(messages=[])
 
@@ -224,27 +242,29 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
             latest_row = cur.fetchone()
 
             if latest_row:
-                logger.info(f"Found latest checkpoint for thread_id: {thread_id}")
+                logger.info("Found latest checkpoint for thread_id: %s", thread_id)
                 checkpoint_data, metadata = latest_row
 
                 # DEBUG: Log the structure of the latest checkpoint
                 logger.info("=== POSTGRESQL LATEST CHECKPOINT DEBUG ===")
                 logger.info(
-                    f"Checkpoint_data keys: {list(checkpoint_data.keys()) if checkpoint_data else 'None'}"
+                    "Checkpoint_data keys: %s",
+                    (list(checkpoint_data.keys()) if checkpoint_data else "None"),
                 )
                 logger.info(
-                    f"Metadata keys: {list(metadata.keys()) if metadata else 'None'}"
+                    "Metadata keys: %s", list(metadata.keys()) if metadata else "None"
                 )
 
                 # Try to get complete conversation from latest checkpoint
                 if checkpoint_data and "channel_values" in checkpoint_data:
                     channel_values = checkpoint_data["channel_values"]
-                    logger.info(f"Channel values keys: {list(channel_values.keys())}")
+                    logger.info("Channel values keys: %s", list(channel_values.keys()))
 
                     if "messages" in channel_values:
                         checkpoint_messages = channel_values["messages"]
                         logger.info(
-                            f"Found {len(checkpoint_messages)} messages in latest checkpoint channel_values"
+                            "Found %s messages in latest checkpoint channel_values",
+                            len(checkpoint_messages),
                         )
 
                         # DEBUG: Log each message structure
@@ -260,7 +280,10 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                                 else str(msg)[:100]
                             )
                             logger.info(
-                                f"  PostgreSQL Message {i}: {msg_type} - {msg_content}"
+                                "PostgreSQL Message %s: %s - %s",
+                                i,
+                                msg_type,
+                                msg_content,
                             )
 
                         # Extract metadata for tracking
@@ -281,16 +304,21 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                                     chat_message.session_id = session_id
                                 chat_messages.append(chat_message)
                                 logger.info(
-                                    f"Successfully converted checkpoint message: {chat_message.type} - {chat_message.content[:50]}..."
+                                    "Successfully converted checkpoint message: %s - %s...",
+                                    chat_message.type,
+                                    chat_message.content[:50],
                                 )
                             except Exception as e:
                                 logger.warning(
-                                    f"Could not convert checkpoint message to ChatMessage: {e}"
+                                    "Could not convert checkpoint message to ChatMessage: %s",
+                                    e,
                                 )
                                 continue
 
                         logger.info(
-                            f"Retrieved {len(chat_messages)} messages from latest checkpoint for thread_id: {thread_id}"
+                            "Retrieved %s messages from latest checkpoint for thread_id: %s",
+                            len(chat_messages),
+                            thread_id,
                         )
                         return ChatHistoryResponse(messages=chat_messages)
                     else:
@@ -310,7 +338,7 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
             )
             rows = cur.fetchall()
 
-            logger.info(f"Found {len(rows)} checkpoints for thread_id: {thread_id}")
+            logger.info("Found %s checkpoints for thread_id: %s", len(rows), thread_id)
 
             total_messages_found = 0
 
@@ -324,7 +352,10 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                 user_id = metadata.get("user_id") if metadata else None
 
                 logger.info(
-                    f"Processing checkpoint with run_id: {run_id}, session_id: {session_id}, user_id: {user_id}"
+                    "Processing checkpoint with run_id: %s, session_id: %s, user_id: %s",
+                    run_id,
+                    session_id,
+                    user_id,
                 )
 
                 # Get messages from metadata.writes (original logic)
@@ -340,17 +371,18 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                 if "__start__" in writes and "messages" in writes["__start__"]:
                     messages.extend(writes["__start__"]["messages"])
                     logger.info(
-                        f"Found {len(writes['__start__']['messages'])} messages in __start__"
+                        "Found %s messages in __start__",
+                        len(writes["__start__"]["messages"]),
                     )
                 if "agent" in writes and "messages" in writes["agent"]:
                     messages.extend(writes["agent"]["messages"])
                     logger.info(
-                        f"Found {len(writes['agent']['messages'])} messages in agent"
+                        "Found %s messages in agent", len(writes["agent"]["messages"])
                     )
                 if "tools" in writes and "messages" in writes["tools"]:
                     messages.extend(writes["tools"]["messages"])
                     logger.info(
-                        f"Found {len(writes['tools']['messages'])} messages in tools"
+                        "Found %s messages in tools", len(writes["tools"]["messages"])
                     )
 
                 total_messages_found += len(messages)
@@ -358,7 +390,7 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                 # Convert each message to ChatMessage format
                 for message_data in messages:
                     try:
-                        logger.info(f"Processing message_data: {message_data}")
+                        logger.info("Processing message_data: %s", message_data)
 
                         # Validate message format - should be a dict with kwargs
                         if (
@@ -366,7 +398,7 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                             or "kwargs" not in message_data
                         ):
                             logger.info(
-                                f"Skipping invalid message format: {message_data}"
+                                "Skipping invalid message format: %s", message_data
                             )
                             continue
 
@@ -383,7 +415,11 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                                 "tool_calls", []
                             )
 
-                        logger.info(f"Message type: {message_type}, content: {content}")
+                        (
+                            logger.info("Message type: %s, content: %s"),
+                            message_type,
+                            content,
+                        )
 
                         # Import here to avoid circular imports
                         from langchain_core.messages import (
@@ -416,7 +452,7 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                             )
                         else:
                             logger.info(
-                                f"Skipping unknown message type: {message_type}"
+                                "Skipping unknown message type: %s", message_type
                             )
                             continue
 
@@ -455,33 +491,36 @@ async def history(thread_id: str, request: Request) -> ChatHistoryResponse:
                                         formatted_tool_calls.append(formatted_call)
                             chat_message.tool_calls = formatted_tool_calls
                             logger.info(
-                                f"Added {len(formatted_tool_calls)} tool calls to message"
+                                "Added %s tool calls to message",
+                                len(formatted_tool_calls),
                             )
 
                         logger.info(
-                            f"Successfully converted message: {chat_message.type} - {chat_message.content[:50]}..."
+                            "Successfully converted message: %s - %s...",
+                            chat_message.type,
+                            chat_message.content[:50],
                         )
                         logger.info(
-                            "Message metadata: "
-                            f"tool_calls={bool(chat_message.tool_calls)}, "
-                            f"response_metadata={bool(chat_message.response_metadata)}"
+                            "Message metadata: tool_calls=%s, response_metadata=%s",
+                            bool(chat_message.tool_calls),
+                            bool(chat_message.response_metadata),
                         )
                         chat_messages.append(chat_message)
 
                     except Exception as e:
-                        logger.error(f"Error processing message: {e}")
+                        logger.error("Error processing message: %s", e)
                         continue
 
             logger.info(
-                f"Retrieved {len(chat_messages)} messages for thread_id: {thread_id}"
+                "Retrieved %s messages for thread_id: %s", len(chat_messages), thread_id
             )
-            logger.info(f"Total messages found: {total_messages_found}")
-            logger.info(f"Final chat_messages: {[msg.type for msg in chat_messages]}")
+            logger.info("Total messages found: %s", total_messages_found)
+            logger.info("Final chat_messages: %s", [msg.type for msg in chat_messages])
             return ChatHistoryResponse(messages=chat_messages)
 
     except Exception as e:
         logger.error(
-            f"Database error while fetching history for thread {thread_id}: {e}"
+            "Database error while fetching history for thread %s: %s", thread_id, e
         )
         raise HTTPException(
             status_code=500, detail=f"Failed to retrieve chat history: {str(e)}"

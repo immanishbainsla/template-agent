@@ -47,20 +47,21 @@ def initialize_google_genai():
             )
 
         except (base64.binascii.Error, UnicodeDecodeError) as e:
-            logger.error(f"Failed to decode base64 credentials: {e}")
+            logger.error("Failed to decode base64 credentials: %s", e)
             return
         except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON in base64 credentials: {e}")
+            logger.error("Invalid JSON in base64 credentials: %s", e)
             return
         except Exception as e:
-            logger.error(f"Unexpected error processing base64 credentials: {e}")
+            logger.error("Unexpected error processing base64 credentials: %s", e)
             return
 
     # Check if credentials are provided as file path
     elif os.path.exists(settings.GOOGLE_APPLICATION_CREDENTIALS_CONTENT):
         credentials_file = settings.GOOGLE_APPLICATION_CREDENTIALS_CONTENT
         logger.info(
-            f"Initialized Google Generative AI with service account file: {settings.GOOGLE_SERVICE_ACCOUNT_FILE}"
+            "Initialized Google Generative AI with service account file: %s",
+            settings.GOOGLE_SERVICE_ACCOUNT_FILE,
         )
 
     # Check if credentials are provided as direct JSON content
@@ -84,19 +85,20 @@ def initialize_google_genai():
             )
 
         except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON in direct credentials: {e}")
+            logger.error("Invalid JSON in direct credentials: %s", e)
             return
         except Exception as e:
-            logger.error(f"Unexpected error processing direct JSON credentials: {e}")
+            logger.error("Unexpected error processing direct JSON credentials: %s", e)
             return
 
     else:
         logger.warning(
-            f"Google service account credentials not found or invalid format: {settings.GOOGLE_SERVICE_ACCOUNT_FILE[:50]}..."
+            "Google service account credentials not found or invalid format: %s...",
+            settings.GOOGLE_SERVICE_ACCOUNT_FILE[:50],
         )
         return
 
     # Set environment variable for langchain-google-genai to use
     if credentials_file:
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_file
-        logger.debug(f"Set GOOGLE_APPLICATION_CREDENTIALS to: {credentials_file}")
+        logger.debug("Set GOOGLE_APPLICATION_CREDENTIALS to: %s", credentials_file)

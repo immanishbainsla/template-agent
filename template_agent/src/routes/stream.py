@@ -43,7 +43,7 @@ async def message_generator(
         - Initialization errors are handled before streaming starts
     """
     try:
-        app_logger.info(f"Starting stream for message: {user_input.message[:100]}...")
+        app_logger.info("Starting stream for message: %s...", user_input.message[:100])
 
         # Stream events using the simplified AgentManager
         async for event in agent_manager.stream_response(user_input):
@@ -59,7 +59,7 @@ async def message_generator(
             yield f"{json.dumps(event, separators=(',', ':'))}\n\n"
 
     except Exception as e:
-        app_logger.error(f"Error in message generator: {e}")
+        app_logger.error("Error in message generator: %s", e)
         error_event = {
             "type": "error",
             "content": {
@@ -140,13 +140,13 @@ async def stream(user_input: StreamRequest, request: Request) -> StreamingRespon
     """
     # Get token from request headers
     access_token = request.headers.get("X-Token")
-    app_logger.info(f"Received token: {'Yes' if access_token else 'No'}")
+    app_logger.info("Received token: %s", ("Yes" if access_token else "No"))
 
     # Initialize AgentManager BEFORE streaming to catch initialization errors
     try:
         agent_manager = AgentManager(redhat_sso_token=access_token)
     except Exception as e:
-        app_logger.error(f"Failed to initialize AgentManager: {e}")
+        app_logger.error("Failed to initialize AgentManager: %s", e)
         raise HTTPException(
             status_code=500, detail=f"Failed to initialize agent: {str(e)}"
         )
