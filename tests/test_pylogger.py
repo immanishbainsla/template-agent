@@ -8,6 +8,7 @@ from unittest.mock import patch, Mock
 
 import pytest
 
+from template_agent.utils.constants import DEFAULT_LOG_FORMAT, DEFAULT_LOG_DATE_FORMAT
 from template_agent.utils.pylogger import (
     configure_logging,
     get_python_logger,
@@ -22,13 +23,9 @@ class TestTraceFormatter:
 
     def setup_method(self):
         """Set up test method."""
-        from template_agent.utils.pylogger import (
-            get_default_log_format,
-            get_default_log_date_format,
-        )
 
         self.formatter = TraceFormatter(
-            fmt=get_default_log_format(), datefmt=get_default_log_date_format()
+            fmt=DEFAULT_LOG_FORMAT, datefmt=DEFAULT_LOG_DATE_FORMAT
         )
 
     def test_format_with_trace_id(self):
@@ -59,15 +56,16 @@ class TestTraceFormatter:
 
         formatted = self.formatter.format(record)
 
-        assert "test-trace-123" in formatted
-        assert "test-client" in formatted
-        assert "1.0.0" in formatted
-        assert "client123" in formatted
-        assert "testuser" in formatted
-        assert "https://example.com" in formatted
-        assert "GET" in formatted
-        assert "/test" in formatted
-        assert "TestAgent/1.0" in formatted
+        # Check for proper key-value pairs
+        assert "trace_id=test-trace-123" in formatted
+        assert "client.name=test-client" in formatted
+        assert "client.version=1.0.0" in formatted
+        assert "jwt.client_id=client123" in formatted
+        assert "jwt.username=testuser" in formatted
+        assert "http.origin=https://example.com" in formatted
+        assert "http.method=GET" in formatted
+        assert "http.path=/test" in formatted
+        assert "user_agent=TestAgent/1.0" in formatted
 
     def test_format_without_trace_id(self):
         """Test formatting without trace ID set."""
@@ -86,8 +84,16 @@ class TestTraceFormatter:
 
         formatted = self.formatter.format(record)
 
-        assert "no-trace" in formatted
-        assert "unknown" in formatted
+        # Check for proper key-value pairs with default values
+        assert "trace_id=no-trace" in formatted
+        assert "client.name=unknown" in formatted
+        assert "client.version=unknown" in formatted
+        assert "jwt.client_id=unknown" in formatted
+        assert "jwt.username=unknown" in formatted
+        assert "http.origin=unknown" in formatted
+        assert "http.method=unknown" in formatted
+        assert "http.path=unknown" in formatted
+        assert "user_agent=unknown" in formatted
 
     @patch.dict("os.environ", {"HOSTNAME": "test-host", "APP_ENV": "test"})
     def test_format_with_environment_vars(self):
@@ -104,8 +110,8 @@ class TestTraceFormatter:
 
         formatted = self.formatter.format(record)
 
-        assert "test-host" in formatted
-        assert "test" in formatted
+        assert "hostname=test-host" in formatted
+        assert "environment=test" in formatted
 
     @patch.dict("os.environ", {}, clear=True)
     @patch("socket.gethostname", return_value="fallback-host")
@@ -123,8 +129,8 @@ class TestTraceFormatter:
 
         formatted = self.formatter.format(record)
 
-        assert "fallback-host" in formatted
-        assert "local" in formatted  # Default APP_ENV
+        assert "hostname=fallback-host" in formatted
+        assert "environment=local" in formatted  # Default APP_ENV
 
 
 class TestTqdmLoggingHandler:
@@ -271,10 +277,10 @@ class TestLoggingIntegration:
             logger.info("Integration test message")
             output = captured_output.getvalue()
 
-            # Verify trace context is included in output
-            assert "integration-test-123" in output
-            assert "integration-client" in output
-            assert "2.0.0" in output
+            # Verify trace context is included in output with proper key-value pairs
+            assert "trace_id=integration-test-123" in output
+            assert "client.name=integration-client" in output
+            assert "client.version=2.0.0" in output
 
     def test_multiple_loggers_use_same_config(self):
         """Test that multiple loggers use the same configuration."""

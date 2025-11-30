@@ -14,7 +14,12 @@ import sys
 
 from tqdm import tqdm
 
-from template_agent.utils.constants import LOGGER
+from template_agent.utils.constants import (
+    DEFAULT_LOG_DATE_FORMAT,
+    DEFAULT_LOG_FORMAT,
+    LOG_ROTATION_CONFIG,
+    LOGGER,
+)
 from template_agent.utils.trace_context import get_log_context, get_trace_id
 
 
@@ -44,51 +49,14 @@ def get_log_file_path(default_path: str = "/etc/logs/app.log") -> str:
     return log_file_path
 
 
-def get_default_log_format() -> str:
-    """Get the default log format string used across the application.
-
-    Returns:
-        Standard log format optimized for Splunk ingestion
-    """
-    return "timestamp=%(asctime)s.%(msecs)03d log_level=%(levelname)s hostname=%(hostname)s environment=%(environment)s trace_id=%(trace_id)s client.name=%(client_name)s client.version=%(client_version)s jwt.client_id=%(jwt_client_id)s jwt.username=%(jwt_username)s http.origin=%(http_origin)s http.method=%(http_method)s http.path=%(http_path)s user_agent=%(user_agent)s class=%(module)s function=%(funcName)s log_message=%(message)s"
-
-
-def get_default_log_date_format() -> str:
-    """Get the default date format string used for logging.
-
-    Returns:
-        Standard date format for log timestamps
-    """
-    return "%Y-%m-%d %H:%M:%S"
-
-
-def get_log_rotation_config() -> dict:
-    """Get the standard log rotation configuration.
-
-    Returns:
-        Dictionary with log rotation settings
-    """
-    return {
-        "maxBytes": 52428800,  # 50MB for better Splunk ingestion
-        "backupCount": 5,  # Keep 5 backup files
-        "encoding": "utf-8",
-    }
-
-
 class TqdmLoggingHandler(logging.StreamHandler):
     """Custom logging handler that uses tqdm.write to avoid interfering with progress bars."""
-
-    def __init__(self, level=logging.NOTSET):
-        """Initialize the TqdmLoggingHandler with the specified logging level."""
-        super().__init__(level)
 
     def emit(self, record):
         """Emit a log record using tqdm.write to avoid progress bar interference."""
         try:
             msg = self.format(record)
-            tqdm.write(
-                msg
-            )  # Use tqdm's write method to ensure output doesn't interfere with progress bars
+            tqdm.write(msg)
         except Exception:
             self.handleError(record)
 
@@ -100,10 +68,7 @@ class TraceFormatter(logging.Formatter):
         """Format the log record with trace context information."""
         # Add trace ID to the log record
         trace_id = get_trace_id()
-        if trace_id:
-            record.trace_id = trace_id
-        else:
-            record.trace_id = "no-trace"
+        record.trace_id = trace_id or "no-trace"
 
         # Get log context from context variable
         log_context = get_log_context()
@@ -143,9 +108,9 @@ def configure_logging(
 
     # Use default formats if not provided
     if log_format is None:
-        log_format = get_default_log_format()
+        log_format = DEFAULT_LOG_FORMAT
     if log_date_format is None:
-        log_date_format = get_default_log_date_format()
+        log_date_format = DEFAULT_LOG_DATE_FORMAT
 
     formatters = {
         LOGGER: {
@@ -171,7 +136,7 @@ def configure_logging(
 
     # Add file handler if enabled
     if enable_file_logging:
-        rotation_config = get_log_rotation_config()
+        rotation_config = LOG_ROTATION_CONFIG
         handlers["file"] = {
             "level": log_level,
             "class": "logging.handlers.RotatingFileHandler",

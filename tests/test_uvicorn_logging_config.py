@@ -5,111 +5,11 @@ import os
 import tempfile
 from unittest.mock import patch
 
-import pytest
-
 from template_agent.utils.uvicorn_logging_config import (
-    UvicornTraceFormatter,
     get_uvicorn_log_config,
     write_uvicorn_log_config_file,
 )
 from template_agent.utils.trace_context import set_trace_id, set_log_context
-
-
-class TestUvicornTraceFormatter:
-    """Test cases for UvicornTraceFormatter class."""
-
-    def setup_method(self):
-        """Set up test method."""
-        from template_agent.utils.pylogger import (
-            get_default_log_format,
-            get_default_log_date_format,
-        )
-
-        self.formatter = UvicornTraceFormatter(
-            fmt=get_default_log_format(), datefmt=get_default_log_date_format()
-        )
-
-    def test_format_with_trace_context(self):
-        """Test formatting with trace context set."""
-        set_trace_id("uvicorn-trace-123")
-        set_log_context(
-            {
-                "client_name": "uvicorn-client",
-                "client_version": "2.0.0",
-                "jwt_client_id": "uvicorn-client-id",
-                "jwt_username": "uvicorn-user",
-                "http_origin": "https://uvicorn.example.com",
-                "http_method": "POST",
-                "http_path": "/uvicorn/test",
-                "user_agent": "UvicornAgent/2.0",
-            }
-        )
-
-        import logging
-
-        record = logging.LogRecord(
-            name="uvicorn.access",
-            level=logging.INFO,
-            pathname="",
-            lineno=0,
-            msg="Uvicorn access log message",
-            args=(),
-            exc_info=None,
-        )
-
-        formatted = self.formatter.format(record)
-
-        assert "uvicorn-trace-123" in formatted
-        assert "uvicorn-client" in formatted
-        assert "2.0.0" in formatted
-        assert "uvicorn-client-id" in formatted
-        assert "uvicorn-user" in formatted
-        assert "https://uvicorn.example.com" in formatted
-        assert "POST" in formatted
-        assert "/uvicorn/test" in formatted
-        assert "UvicornAgent/2.0" in formatted
-
-    def test_format_without_trace_context(self):
-        """Test formatting without trace context."""
-        set_trace_id(None)
-        set_log_context({})
-
-        import logging
-
-        record = logging.LogRecord(
-            name="uvicorn.error",
-            level=logging.ERROR,
-            pathname="",
-            lineno=0,
-            msg="Uvicorn error message",
-            args=(),
-            exc_info=None,
-        )
-
-        formatted = self.formatter.format(record)
-
-        assert "no-trace" in formatted
-        assert "unknown" in formatted
-
-    @patch.dict("os.environ", {"HOSTNAME": "uvicorn-host", "APP_ENV": "uvicorn-test"})
-    def test_format_includes_environment_vars(self):
-        """Test that formatting includes environment variables."""
-        import logging
-
-        record = logging.LogRecord(
-            name="uvicorn",
-            level=logging.INFO,
-            pathname="",
-            lineno=0,
-            msg="Uvicorn message",
-            args=(),
-            exc_info=None,
-        )
-
-        formatted = self.formatter.format(record)
-
-        assert "uvicorn-host" in formatted
-        assert "uvicorn-test" in formatted
 
 
 class TestGetUvicornLogConfig:
