@@ -11,6 +11,7 @@ import pytest
 from template_agent.utils.constants import DEFAULT_LOG_FORMAT, DEFAULT_LOG_DATE_FORMAT
 from template_agent.utils.pylogger import (
     configure_logging,
+    get_log_file_path,
     get_python_logger,
     TraceFormatter,
     TqdmLoggingHandler,
@@ -228,9 +229,70 @@ class TestConfigureLogging:
         """Test configure_logging falls back to temp directory when log dir not writable."""
         with patch("os.makedirs", side_effect=PermissionError("Access denied")):
             with patch.dict("os.environ", {"LOG_FILE_PATH": "/invalid/path/test.log"}):
-                configure_logging(enable_file_logging=True)
+                with pytest.warns(
+                    UserWarning,
+                    match="Cannot create log directory.*Falling back to temp directory",
+                ):
+                    configure_logging(enable_file_logging=True)
 
                 # Should not raise an exception and should use temp directory
+
+
+class TestGetLogFilePath:
+    """Test cases for get_log_file_path function."""
+
+    def test_get_log_file_path_valid_directory(self):
+        """Test get_log_file_path with valid directory."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_path = os.path.join(temp_dir, "test.log")
+            with patch.dict("os.environ", {"LOG_FILE_PATH": log_path}):
+                result = get_log_file_path()
+                assert result == log_path
+
+    def test_get_log_file_path_directory_creation_fails_warns_and_fallback(self):
+        """Test get_log_file_path warns and falls back when directory creation fails."""
+        with patch("os.makedirs", side_effect=PermissionError("Access denied")):
+            with patch.dict("os.environ", {"LOG_FILE_PATH": "/invalid/path/test.log"}):
+                with pytest.warns(
+                    UserWarning,
+                    match="Cannot create log directory.*Falling back to temp directory",
+                ):
+                    result = get_log_file_path()
+
+                # Should fall back to temp directory
+                assert tempfile.gettempdir() in result
+                assert result.endswith("app.log")
+
+    def test_get_log_file_path_file_not_writable_warns_and_fallback(self):
+        """Test get_log_file_path warns and falls back when file is not writable."""
+        # Mock a scenario where directory exists but file can't be written
+        with patch("os.path.exists", return_value=True):
+            with patch("builtins.open", side_effect=PermissionError("Cannot write")):
+                with patch.dict("os.environ", {"LOG_FILE_PATH": "/readonly/test.log"}):
+                    with pytest.warns(
+                        UserWarning,
+                        match="Cannot write to log file.*Falling back to temp directory",
+                    ):
+                        result = get_log_file_path()
+
+                    # Should fall back to temp directory
+                    assert tempfile.gettempdir() in result
+                    assert result.endswith("app.log")
+
+    def test_get_log_file_path_temp_directory_fails_raises_exception(self):
+        """Test get_log_file_path raises exception when even temp directory fails."""
+
+        def mock_open_fail(path, mode):
+            raise PermissionError("Cannot write anywhere")
+
+        with patch("os.path.exists", return_value=True):
+            with patch("builtins.open", side_effect=mock_open_fail):
+                with patch.dict("os.environ", {"LOG_FILE_PATH": "/readonly/test.log"}):
+                    with pytest.raises(
+                        PermissionError,
+                        match="Cannot write to either requested log path",
+                    ):
+                        get_log_file_path()
 
 
 class TestGetPythonLogger:

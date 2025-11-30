@@ -31,20 +31,64 @@ def get_log_file_path(default_path: str = "/etc/logs/app.log") -> str:
 
     Returns:
         Valid log file path that can be written to
+
+    Raises:
+        PermissionError: If neither the requested path nor temp directory is writable
     """
     import os
     import tempfile
+    import warnings
 
     log_file_path = os.environ.get("LOG_FILE_PATH", default_path)
+    original_path = log_file_path
 
     # Ensure log directory exists
     log_dir = os.path.dirname(log_file_path)
     if log_dir and not os.path.exists(log_dir):
         try:
             os.makedirs(log_dir, exist_ok=True)
-        except (OSError, PermissionError):
+        except OSError as e:
             # Fallback to temp directory if log directory is not writable
-            log_file_path = os.path.join(tempfile.gettempdir(), "app.log")
+            temp_path = os.path.join(tempfile.gettempdir(), "app.log")
+            warnings.warn(
+                f"Cannot create log directory '{log_dir}' (error: {e}). "
+                f"Falling back to temp directory: '{temp_path}'",
+                UserWarning,
+                stacklevel=2,
+            )
+            log_file_path = temp_path
+
+    # Verify the final path is writable
+    try:
+        # Test writability by attempting to open in append mode
+        with open(log_file_path, "a"):
+            pass
+    except OSError as e:
+        if log_file_path == original_path:
+            # First attempt failed, try temp directory
+            temp_path = os.path.join(tempfile.gettempdir(), "app.log")
+            warnings.warn(
+                f"Cannot write to log file '{log_file_path}' (error: {e}). "
+                f"Falling back to temp directory: '{temp_path}'",
+                UserWarning,
+                stacklevel=2,
+            )
+            log_file_path = temp_path
+
+            # Test temp directory writability
+            try:
+                with open(log_file_path, "a"):
+                    pass
+            except OSError as temp_e:
+                raise PermissionError(
+                    f"Cannot write to either requested log path '{original_path}' "
+                    f"or temp directory '{temp_path}': {temp_e}"
+                ) from temp_e
+        else:
+            # Even temp directory failed
+            raise PermissionError(
+                f"Cannot write to temp log path '{log_file_path}': {e}"
+            ) from e
 
     return log_file_path
 
