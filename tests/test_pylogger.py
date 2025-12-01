@@ -265,6 +265,7 @@ class TestGetLogFilePath:
 
     def test_get_log_file_path_file_not_writable_warns_and_fallback(self):
         """Test get_log_file_path warns and falls back when file is not writable."""
+
         # Mock a scenario where directory exists but original file can't be written
         # but temp directory is writable
         def mock_open_side_effect(path, mode):
@@ -272,7 +273,7 @@ class TestGetLogFilePath:
                 raise PermissionError("Cannot write")
             # Allow temp directory to be writable
             return tempfile.NamedTemporaryFile(mode=mode, delete=False)
-        
+
         with patch("os.path.exists", return_value=True):
             with patch("builtins.open", side_effect=mock_open_side_effect):
                 with patch.dict("os.environ", {"LOG_FILE_PATH": "/readonly/test.log"}):
