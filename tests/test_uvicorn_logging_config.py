@@ -87,7 +87,7 @@ class TestGetUvicornLogConfig:
         formatter_config = config["formatters"]["template-agent-logger"]
         assert (
             formatter_config["()"]
-            == "template_agent.utils.uvicorn_logging_config.UvicornTraceFormatter"
+            == "template_agent.utils.pylogger.TraceFormatter"
         )
         assert "timestamp=" in formatter_config["format"]
         assert "trace_id=" in formatter_config["format"]
